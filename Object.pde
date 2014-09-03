@@ -11,7 +11,7 @@ class Object {
      ver.add(p);
   }
 
-  void draw() {
+  void drawObject() {
     noFill();
     stroke(0);
     beginShape();
