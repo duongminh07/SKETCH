@@ -7,6 +7,7 @@ class Button {
   Point position;
   int sizeX;
   int sizeY;
+  color buttonBorder;
 
   Button(String name, color cb, color co, Float pX, Float pY, int sX, int sY) {
     this.name = name;
@@ -15,6 +16,7 @@ class Button {
     this.position =  new Point(pX, pY);
     this.sizeX = sX;
     this.sizeY = sY;
+    buttonBorder = #BBBBBB;
   }
 
   void setColor(color cb, color co) {
@@ -25,7 +27,7 @@ class Button {
   void drawButton() {
     update();
     fill(col);
-    stroke(0);
+    stroke(buttonBorder);
     rect(position.getX(), position.getY(), sizeX, sizeY);   
     textSize(sizeY*0.5);
     textAlign(CENTER, CENTER);  
@@ -42,13 +44,28 @@ class Button {
       return false;
     }
   }
-  
+
+  boolean checkPressed() {
+    if (mousePressed && checkOver()) {
+      return true;
+    } else {
+      return false;
+    }
+  }
+
   void update() {
     if (checkOver()) {
       this.col = colOver;
+      
     } else {
       this.col = colBase;
     }
+    
+    if (checkPressed()) {
+        buttonBorder = 0;
+      } else {
+        buttonBorder = #BBBBBB;
+      }
   }
 }
 

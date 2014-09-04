@@ -6,6 +6,10 @@ class Object {
     ver = new ArrayList();
   }
   
+  Object(ArrayList<Point> ver) {
+    this.ver = ver;
+  }
+  
   void addVertex(float x, float y) {
      Point p = new Point(x, y);
      ver.add(p);
