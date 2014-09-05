@@ -38,7 +38,6 @@ class Button {
   boolean checkOver() {
     if (mouseX >= position.getX() && mouseX <= sizeX + position.getX() && 
       mouseY >= position.getY() && mouseY <= sizeY + position.getY()) {
-      println("Begin button hovered " + mouseX + " " + mouseY);
       return true;
     } else {
       return false;
