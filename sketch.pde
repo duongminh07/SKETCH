@@ -2,43 +2,112 @@ Object newObject;
 ArrayList<Point> points;
 Button beginObjectButton;
 Button endObjectButton;
+Button renderButton;
 boolean beginObject;
 boolean endObject;
+int renderType;
+
+
 void setup() {
-  size(1500, 800) ;
+  size(1200, 600) ;
   background(255);
   beginObject = true;
   endObject = false;
   points = new ArrayList();
   beginObjectButton = new Button("Begin", #EEEEEE, #DDDDDD, 0.0, 0.0, 80, 40);
   endObjectButton = new Button("End", #EEEEEE, #DDDDDD, 81.0, 0.0, 80, 40);
+  renderButton = new Button("Default", #EEEEEE, #DDDDDD, 162.0, 0.0, 80, 40);
+  renderType = 1;
 }
 
-void draw() {
-  
-  //Draw buttons
-  beginObjectButton.drawButton();
-  endObjectButton.drawButton();
+void draw() {  
+
+
   if (mousePressed && newObject == null && mouseY>40) {
     stroke(0);
     line(mouseX, mouseY, pmouseX, pmouseY);
-    
+
     //Controlling the number of points
-    if (getDistance(mouseX,mouseY, pmouseX, pmouseY)>2)
-      points.add(new Point((float)mouseX, (float)mouseY));
+    if (getDistance(mouseX, mouseY, pmouseX, pmouseY)>2) {
+      Point addPoint = new Point(mouseX, mouseY);
+      if (points.size() > 0) {
+        points.get(points.size() - 1).addAdjacents(addPoint);
+        addPoint.addAdjacents(points.get(points.size()-1));
+      }     
+      points.add(addPoint);
+      points.get(points.size() - 1).position = points.size() - 1;
+    }
   }
-  
-  //Create a new object
-  if (endObjectButton.checkPressed() && newObject == null) {
-    newObject = new Object(points);
-    newObject.drawObject();
+
+
+  if (newObject != null) {
+    switch(renderType) {
+    case 1: 
+      {
+        newObject.drawObject();  
+        break;
+      }
+    case 2: 
+      {
+        newObject.drawObjectLine();
+        Triangle test = new Triangle(newObject.ver.get(0), newObject.ver.get(10), newObject.ver.get(newObject.ver.size() - 1));
+        test.drawTriangle();
+        if (test.checkInside(new Point(mouseX, mouseY))) 
+          println("inside triangle");
+        break;
+      }
+    case 3:
+      {
+        newObject.drawTriangle();
+        break;
+      }
+    }
   }
-  
+
+  //Draw buttons
+  beginObjectButton.drawButton();
+  endObjectButton.drawButton();
+  renderButton.drawButton();
+}
+
+
+void mouseClicked() {
+  if (renderButton.checkOver()) {
+    renderType ++;
+    if (renderType == 4) {
+      renderType = 1;
+    }
+    switch(renderType) {
+    case 1: 
+      {
+        renderButton = new Button("Default", #EEEEEE, #DDDDDD, 162.0, 0.0, 80, 40);
+        break;
+      }
+    case 2: 
+      {
+        renderButton = new Button("Line", #EEEEEE, #DDDDDD, 162.0, 0.0, 80, 40);
+        break;
+      }
+    case 3:
+      {
+        renderButton = new Button("Triangle", #EEEEEE, #DDDDDD, 243.0, 0.0, 80, 40);
+        break;
+      }
+    }
+  }
+
   //Init a fresh space
-  if (beginObjectButton.checkPressed()) {
+  if (beginObjectButton.checkOver()) {
+    println("Init new screen");
     background(255);
     newObject = null;
     points = new ArrayList();
+  }
+
+  //Create a new object
+  if (endObjectButton.checkOver() && newObject == null) {
+    println("Creating a new object");
+    newObject = new Object(points);
   }
 }
 
