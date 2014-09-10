@@ -50,10 +50,6 @@ void draw() {
     case 2: 
       {
         newObject.drawObjectLine();
-        Triangle test = new Triangle(newObject.ver.get(0), newObject.ver.get(10), newObject.ver.get(newObject.ver.size() - 1));
-        test.drawTriangle();
-        if (test.checkInside(new Point(mouseX, mouseY))) 
-          println("inside triangle");
         break;
       }
     case 3:
@@ -107,6 +103,7 @@ void mouseClicked() {
   //Create a new object
   if (endObjectButton.checkOver() && newObject == null) {
     println("Creating a new object");
+    points.get(0).addAdjacents(points.get(points.size() - 1));
     newObject = new Object(points);
   }
 }

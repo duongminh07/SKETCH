@@ -49,15 +49,15 @@ class Object {
     line(ver.get(0).x, ver.get(0).y, ver.get(ver.size()-1).x, ver.get(ver.size() - 1).y);
     endShape();
   }
-  
+
   void drawTriangle() {
     ArrayList<Point> tempVer = ver;
     if (triangles.size() == 0 ) {
       formTriangle(tempVer);
     }
-    for (Triangle tri:triangles) {
+    for (Triangle tri : triangles) {
       tri.drawTriangle();
-    } 
+    }
   }
 
   void getMost() {
@@ -95,14 +95,21 @@ class Object {
 
   void formTriangle(ArrayList<Point> targetVer) {
     Point leftMost = getLeftMost(targetVer);
+    println("Left most position: " + leftMost.position);
     Triangle test = new Triangle(leftMost, leftMost.adjacents.get(0), leftMost.adjacents.get(1));
     ArrayList<Point> insidePoints = new ArrayList();
-    for (Point p:targetVer) {
+    int i = 0;
+    for (Point p : targetVer) {
       if (!test.checkInside(p)) {
-        insidePoints.add(p);
+        if (!((p.x == test.a.x)&&(p.y == test.a.y)||(p.x == test.b.x)&&(p.y == test.b.y)|| (p.x == test.c.x)&&(p.y == test.c.y))) {
+          insidePoints.add(p);
+          i++;
+          println("Found " + i + " points inside");
+        }
       }
     }
     if (insidePoints.size() == 0) {
+      println("Adding triangle");
       triangles.add(test);
       targetVer.remove(leftMost);
       Point p0 = leftMost.adjacents.get(0);
