@@ -9,7 +9,7 @@ class Button {
   int sizeY;
   color buttonBorder;
 
-  Button(String name, color cb, color co, Float pX, Float pY, int sX, int sY) {
+  Button(String name, color cb, color co, int pX, int pY, int sX, int sY) {
     this.name = name;
     this.colBase = cb;
     this.colOver = co;
@@ -28,6 +28,7 @@ class Button {
     update();
     fill(col);
     stroke(buttonBorder);
+    strokeWeight(1);
     rect(position.getX(), position.getY(), sizeX, sizeY);   
     textSize(sizeY*0.5);
     textAlign(CENTER, CENTER);  
@@ -55,16 +56,15 @@ class Button {
   void update() {
     if (checkOver()) {
       this.col = colOver;
-      
     } else {
       this.col = colBase;
     }
-    
+
     if (checkPressed()) {
-        buttonBorder = 0;
-      } else {
-        buttonBorder = #BBBBBB;
-      }
+      buttonBorder = 0;
+    } else {
+      buttonBorder = #BBBBBB;
+    }
   }
 }
 

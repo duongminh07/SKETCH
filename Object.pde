@@ -1,63 +1,143 @@
 class Object {
-
-  ArrayList<Point> ver;
+  PImage originalDraw;
+  ArrayList<Point> allPoints;
+  ArrayList<Point> boundVer;
+  ArrayList<Point> interiorVer;
+  ArrayList<Point> tempVer;
   ArrayList<Point> pins;
-  ArrayList<Triangle> triangles;
+  Boolean[][] insidePoints;
+  Boolean[][] edges;
   Point leftMost;
   Point rightMost;
   Point upMost;
   Point downMost;
+  int dist;
 
   Object() {
-    ver = new ArrayList();
+    boundVer = new ArrayList();
+    allPoints = new ArrayList();
     pins = new ArrayList();
-    triangles = new ArrayList();
+    dist = 15;
   }
 
-  Object(ArrayList<Point> ver) {
-    this.ver = ver;
+  Object(ArrayList<Point> boundVer, ArrayList<Point> allPoints, PImage image) {
+    this.boundVer = boundVer;
+    this.allPoints = allPoints;
+    this.originalDraw = image;
     pins = new ArrayList();
-    triangles = new ArrayList();
+    dist = 15;
   }
 
-  void addVertex(float x, float y) {
+  void addBoundVertex(int x, int y) {
     Point p = new Point(x, y);
-    ver.add(p);
+    boundVer.add(p);
+  }
+
+  void drawPoints() {
+    for (int i = 0; i < boundVer.size (); i ++) {
+      boundVer.get(i).drawPoint();
+    }
+  }
+
+  void drawOriginal() {
+    background(255);
+    stroke(1);
+    strokeWeight(1);
+    for (Point p : allPoints) {
+      point(p.x, p.y);
+    }
   }
 
   void drawObject() {
     background(255);
-    noFill();
-    stroke(0);
+    fill(250);    
     smooth();
+    strokeWeight(1);
+    stroke(0);
     beginShape();
-    for (int i = 0; i < ver.size (); i ++) {
-      curveVertex(ver.get(i).getX(), ver.get(i).getY());
+    curveVertex(boundVer.get(0).x, boundVer.get(0).y);
+    for (int i = 0; i < boundVer.size (); i ++) {
+      curveVertex(boundVer.get(i).x, boundVer.get(i).y);
     }
+    curveVertex(boundVer.get(boundVer.size() - 1).x, boundVer.get(boundVer.size()-1).y);
     endShape(CLOSE);
+    drawPoints();
+  }
+  
+  void mapTexture() {
+    background(255);
+    noFill();   
+    smooth();
+    strokeWeight(1);
+    stroke(0);
+    beginShape();
+    curveVertex(boundVer.get(0).x, boundVer.get(0).y);
+    for (int i = 0; i < boundVer.size (); i ++) {
+      curveVertex(boundVer.get(i).x, boundVer.get(i).y);
+    }
+    curveVertex(boundVer.get(boundVer.size() - 1).x, boundVer.get(boundVer.size()-1).y);
+    endShape(CLOSE);
+    
+    textureMode(IMAGE);
+    beginShape();
+    texture(originalDraw);
+    vertex(0, 40, 0, 0);
+    vertex(width, 40, width, 0);
+    vertex(width, height, width, height - 40);
+    vertex(0, height, 0, height - 40);
+    endShape();
+    
+    drawPoints();
   }
 
   void drawObjectLine() {
     background(255);
-    noFill();
+    fill(250);
     stroke(0);
+    strokeWeight(1);
     smooth();
     beginShape();
-    for (int i = 1; i < ver.size (); i ++) {
-      line(ver.get(i).x, ver.get(i).y, ver.get(i - 1).x, ver.get(i-1).y);
+    for (int i = 0; i < boundVer.size (); i ++) {
+      vertex(boundVer.get(i).x, boundVer.get(i).y);
     }
-    line(ver.get(0).x, ver.get(0).y, ver.get(ver.size()-1).x, ver.get(ver.size() - 1).y);
-    endShape();
+    endShape(CLOSE);
+    drawPoints();
   }
 
-  void drawTriangle() {
-    ArrayList<Point> tempVer = ver;
-    if (triangles.size() == 0 ) {
-      formTriangle(tempVer);
+  void drawGrid() {
+    getMost();
+    for (int i = leftMost.x - dist; i <= rightMost.x + dist; i += dist) {
+      stroke(200);
+      strokeWeight(1);
+      line(i, upMost.y - dist, i, downMost.y + dist);
     }
-    for (Triangle tri : triangles) {
-      tri.drawTriangle();
+    for (int i = upMost.y - dist; i <= downMost.y + dist; i +=dist) {
+      stroke(200);
+      strokeWeight(1);
+      line(leftMost.x - dist, i, rightMost.x + dist, i);
     }
+    drawPoints();
+  }
+
+  void drawInsideGrid() {
+    for (int i = leftMost.x -dist; i <= rightMost.x + dist; i += dist) {
+      for (int j = upMost.y - dist; j < downMost.y + dist; j += dist) {
+        if (insidePoints[i][j]&&insidePoints[i][j+dist]
+          &&insidePoints[i+dist][j]&&insidePoints[i + dist][j +dist]) {
+          fill(#f20000);
+          strokeWeight(1);
+          stroke(200);
+          rect(i, j, dist, dist);
+        }
+      }
+    }
+  }
+
+  void objectSubdivision() {
+    drawObjectLine();
+    getInsidePoints();
+    drawGrid();
+    drawInsideGrid();
   }
 
   void getMost() {
@@ -66,18 +146,18 @@ class Object {
     upMost = new Point(0, height);
     downMost = new Point(0, 0);
 
-    for (int i = 0; i < ver.size (); i ++) {
-      Point temp = ver.get(i);
+    for (int i = 0; i < boundVer.size (); i ++) {
+      Point temp = boundVer.get(i);
       if (temp.x < leftMost.x) {
         leftMost = temp;
       }
       if (temp.x > rightMost.x) {
         rightMost = temp;
       }
-      if (temp.y < downMost.y) {
+      if (temp.y > downMost.y) {
         downMost = temp;
       }
-      if (temp.y > upMost.y) {
+      if (temp.y < upMost.y) {
         upMost = temp;
       }
     }
@@ -93,43 +173,82 @@ class Object {
     return result;
   }
 
-  void formTriangle(ArrayList<Point> targetVer) {
-    Point leftMost = getLeftMost(targetVer);
-    println("Left most position: " + leftMost.position);
-    Triangle test = new Triangle(leftMost, leftMost.adjacents.get(0), leftMost.adjacents.get(1));
-    ArrayList<Point> insidePoints = new ArrayList();
-    int i = 0;
-    for (Point p : targetVer) {
-      if (!test.checkInside(p)) {
-        if (!((p.x == test.a.x)&&(p.y == test.a.y)||(p.x == test.b.x)&&(p.y == test.b.y)|| (p.x == test.c.x)&&(p.y == test.c.y))) {
-          insidePoints.add(p);
-          i++;
-          println("Found " + i + " points inside");
+  void getInsidePoints() {
+    color c = color(250, 250, 250);
+    getMost();
+    insidePoints = new Boolean[width + 1][height + 1];
+    for (int i = 1; i <= width; i ++) {
+      for (int j = 1; j <= height; j ++) {
+        //println(get(i, j));
+        if (get(i, j) == c) {
+          insidePoints[i][j] = true;
+        } else {
+          insidePoints[i][j] = false;
         }
       }
     }
-    if (insidePoints.size() == 0) {
-      println("Adding triangle");
-      triangles.add(test);
-      targetVer.remove(leftMost);
-      Point p0 = leftMost.adjacents.get(0);
-      Point p1 = leftMost.adjacents.get(1);
-      targetVer.remove(p0);
-      targetVer.remove(p1);
-      p0.adjacents.remove(leftMost);
-      p1.adjacents.remove(leftMost);
-      p0.adjacents.add(p1);
-      p1.adjacents.add(p0);
-      targetVer.add(p0);
-      targetVer.add(p1);      
-      formTriangle(targetVer);
-    } else {
-      Point leftMostInside = getLeftMost(insidePoints);
-      targetVer.remove(leftMost);
-      leftMost.adjacents.remove(1);
-      leftMost.adjacents.add(leftMostInside);
-      targetVer.add(leftMost);
-      formTriangle(targetVer);
+  }
+
+  void reduceBoundaryVertices() {
+    tempVer = new ArrayList();
+    println("Original size: " + boundVer.size());
+    int start = 0;
+    tempVer.add(boundVer.get(0));
+    tempVer.get(0).adjacents.clear();
+    tempVer.get(0).position = 0;
+    while (start < boundVer.size () - 1) {
+      int comparePoint = start + 1;
+      while (true) {
+        if (comparePoint >= boundVer.size() - 1) break;
+        if (dist(boundVer.get(start).x, boundVer.get(start).y, boundVer.get(comparePoint).x, boundVer.get(comparePoint).y) < dist) {
+          comparePoint +=1;
+        } else {
+          tempVer.get(tempVer.size() - 1).adjacents.add(boundVer.get(comparePoint));
+          tempVer.add(boundVer.get(comparePoint));
+          tempVer.get(tempVer.size() - 1).adjacents.clear();
+          tempVer.get(tempVer.size() - 1).adjacents.add(tempVer.get(tempVer.size() - 2));
+          tempVer.get(tempVer.size() - 1).position = tempVer.size() - 1;
+          start = comparePoint;
+          break;
+        }
+      }
+      if (comparePoint >= boundVer.size() - 1) break;
+    }
+    tempVer.get(0).adjacents.add(tempVer.get(tempVer.size() - 1));
+    tempVer.get(tempVer.size() - 1).adjacents.add(tempVer.get(0));
+    boundVer = tempVer;
+  }
+  
+  void getInteriorVer() {
+    interiorVer = new ArrayList();
+    for (int i = 0; i < boundVer.size(); i ++) {
+      Point p0 = boundVer.get(i);
+      Point p1 = p0.adjacents.get(0);
+      Point p2 = p0.adjacents.get(1);
+      Point mp01 = new Point((p0.x + p1.x)/2, (p0.y + p1.y)/2);
+      Point mp02 = new Point((p0.x + p2.x)/2, (p0.y + p2.y)/2);
+      PVector v01 = new PVector(p1.x - p0.x, p1.y - p0.y); 
+      PVector v02 = new PVector(p2.x - p0.x, p2.y - p0.y);
+      int c1 = round(-v01.x*mp01.x - v01.y*mp01.y);
+      int c2 = round(-v02.x*mp02.x - v02.y*mp02.y);
+      int sectY = round(-(c1 - v01.x/v02.x*c2)/(v01.y - v01.x*v02.y/v02.x)); 
+      int sectX = round((-c1 - v01.y*sectY)/v01.x);
+      if (sectX < 0 || sectX > width || sectY < 0 || sectY > height) {
+        int c = round(-v01.x*p0.x - v01.y*p0.y);
+        
+      }
+      //println(sectX + " " + round((-c2 - v02.y*sectY)/v02.x) + " " + p0.position);
+      strokeWeight(1);
+      line(p0.x, p0.y, sectX, sectY);
+      float tempDist = dist(p0.x, p0.y, sectX, sectY);
+      Point tempInterior = new Point(round((-p0.x + sectX) * (dist)/tempDist) + p0.x, round((-p0.y + sectY) * (dist)/tempDist) + p0.y);
+      if (insidePoints[tempInterior.x][tempInterior.y] == null || !insidePoints[tempInterior.x][tempInterior.y]) {
+        tempInterior = new Point(p0.x*2 - tempInterior.x, p0.y*2 - tempInterior.y);
+      }
+      interiorVer.add(tempInterior);
+    }
+    for (Point p:interiorVer) {
+      p.drawPoint();
     }
   }
 
