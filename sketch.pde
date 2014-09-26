@@ -14,7 +14,7 @@ int drawMode;
 
 
 void setup() {
-  size(1200, 600, P2D) ;
+  size(1200, 600) ;
   background(255);
   beginObject = true;
   endObject = false;

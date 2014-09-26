@@ -235,7 +235,8 @@ class Object {
       int sectX = round((-c1 - v01.y*sectY)/v01.x);
       if (sectX < 0 || sectX > width || sectY < 0 || sectY > height) {
         int c = round(-v01.x*p0.x - v01.y*p0.y);
-        
+        sectY = p0.y - dist*2;
+        sectX = round((-c - v01.y*sectY)/v01.x);
       }
       //println(sectX + " " + round((-c2 - v02.y*sectY)/v02.x) + " " + p0.position);
       strokeWeight(1);
