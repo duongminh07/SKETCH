@@ -44,14 +44,14 @@ class Triangle {
   }
 
   boolean checkInsideTwoVectors(PVector v, PVector v1, PVector v2) {
-    if (degrees(PVector.angleBetween(v, v2)) > degrees(PVector.angleBetween(v1, v2)) 
-      || degrees(PVector.angleBetween(v, v1)) > degrees(PVector.angleBetween(v1, v2)) ) 
+    if (degrees(PVector.angleBetween(v, v2)) >= degrees(PVector.angleBetween(v1, v2)) 
+      || degrees(PVector.angleBetween(v, v1)) >= degrees(PVector.angleBetween(v1, v2)) ) 
       return false;
     else return true;
   }
 
   void drawTriangle () {
-    fill(#EEEEEE);
+    noFill();
     stroke(0);
     triangle(a.x, a.y, b.x, b.y, c.x, c.y);
   }

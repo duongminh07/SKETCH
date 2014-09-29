@@ -1,4 +1,5 @@
 Object newObject;
+Object undoObject;
 ArrayList<Point> points;
 ArrayList<Point> allPoints;
 ArrayList<Point> selectedPoints;
@@ -6,6 +7,8 @@ Button beginObjectButton;
 Button endObjectButton;
 Button renderButton;
 Button drawModeButton;
+Button optimizeBoundaryButton;
+Button undoButton;
 boolean beginObject;
 boolean endObject;
 int renderType;
@@ -14,7 +17,7 @@ int drawMode;
 
 
 void setup() {
-  size(1200, 600) ;
+  size(1200, 600, P2D) ;
   background(255);
   beginObject = true;
   endObject = false;
@@ -25,6 +28,8 @@ void setup() {
   endObjectButton = new Button("End", #EEEEEE, #DDDDDD, 81, 0, 80, 40);
   renderButton = new Button("Original", #EEEEEE, #DDDDDD, 162, 0, 80, 40);
   drawModeButton = new Button("Boundary", #EEEEEE, #DDDDDD, 243, 0, 120, 40); 
+  optimizeBoundaryButton = new Button("OB", #EEEEEE, #DDDDDD, 364, 0, 80, 40); 
+  undoButton = new Button("Undo", #EEEEEE, #DDDDDD, 445, 0, 80, 40); 
   renderType = 1;
   zoom = 1;
   drawMode = 1;
@@ -64,8 +69,6 @@ void draw() {
     case 3: 
       {
         newObject.drawObjectLine();
-        newObject.getInsidePoints();
-        newObject.getInteriorVer();
         drawSelectedPoint();        
         break;
       }
@@ -91,12 +94,15 @@ void draw() {
   endObjectButton.drawButton();
   renderButton.drawButton();
   drawModeButton.drawButton();
+  optimizeBoundaryButton.drawButton();
+  undoButton.drawButton();
 }
 
 void mousePressed() {
   
   //select points
   if (newObject != null) {
+    if (undoObject == null) undoObject = newObject;
     for (Point p : newObject.boundVer) {
       if (p.hover()) {
         if (keyPressed && keyCode == CONTROL) {
@@ -174,6 +180,17 @@ void mouseClicked() {
       }
     }
   }
+  
+  //optimize boundary button
+  if (optimizeBoundaryButton.checkOver() && newObject != null) {
+    newObject.optimizeBoundaryVertices();
+  }
+  
+  //undo
+  if (undoButton.checkOver() && undoObject != null) {
+    newObject = undoObject;
+    undoObject = null;
+  }
 
   //Init a fresh space
   if (beginObjectButton.checkOver()) {
@@ -200,7 +217,7 @@ void mouseClicked() {
 
     //set up object
     newObject = new Object(points, allPoints, image);
-    newObject.reduceBoundaryVertices();
+    newObject.optimizeBoundaryVertices();
     newObject.drawObjectLine();  
     newObject.getInsidePoints();
     background(255);

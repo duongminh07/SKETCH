@@ -5,7 +5,10 @@ class Object {
   ArrayList<Point> interiorVer;
   ArrayList<Point> tempVer;
   ArrayList<Point> pins;
+  ArrayList<Point> objectNodes;
+  ArrayList<Edge> objectEdges;
   Boolean[][] insidePoints;
+  Boolean[][] insideInnerShell;
   Boolean[][] edges;
   Point leftMost;
   Point rightMost;
@@ -17,6 +20,8 @@ class Object {
     boundVer = new ArrayList();
     allPoints = new ArrayList();
     pins = new ArrayList();
+    objectEdges = new ArrayList();
+    objectNodes = new ArrayList();
     dist = 15;
   }
 
@@ -33,9 +38,9 @@ class Object {
     boundVer.add(p);
   }
 
-  void drawPoints() {
-    for (int i = 0; i < boundVer.size (); i ++) {
-      boundVer.get(i).drawPoint();
+  void drawPoints(ArrayList<Point> points) {
+    for (int i = 0; i < points.size (); i ++) {
+      points.get(i).drawPoint();
     }
   }
 
@@ -61,9 +66,9 @@ class Object {
     }
     curveVertex(boundVer.get(boundVer.size() - 1).x, boundVer.get(boundVer.size()-1).y);
     endShape(CLOSE);
-    drawPoints();
+    drawPoints(boundVer);
   }
-  
+
   void mapTexture() {
     background(255);
     noFill();   
@@ -77,7 +82,7 @@ class Object {
     }
     curveVertex(boundVer.get(boundVer.size() - 1).x, boundVer.get(boundVer.size()-1).y);
     endShape(CLOSE);
-    
+
     textureMode(IMAGE);
     beginShape();
     texture(originalDraw);
@@ -86,8 +91,8 @@ class Object {
     vertex(width, height, width, height - 40);
     vertex(0, height, 0, height - 40);
     endShape();
-    
-    drawPoints();
+
+    drawPoints(boundVer);
   }
 
   void drawObjectLine() {
@@ -101,7 +106,7 @@ class Object {
       vertex(boundVer.get(i).x, boundVer.get(i).y);
     }
     endShape(CLOSE);
-    drawPoints();
+    drawPoints(boundVer);
   }
 
   void drawGrid() {
@@ -116,28 +121,47 @@ class Object {
       strokeWeight(1);
       line(leftMost.x - dist, i, rightMost.x + dist, i);
     }
-    drawPoints();
+    drawPoints(boundVer);
   }
 
   void drawInsideGrid() {
+    drawPoints(interiorVer);
     for (int i = leftMost.x -dist; i <= rightMost.x + dist; i += dist) {
       for (int j = upMost.y - dist; j < downMost.y + dist; j += dist) {
-        if (insidePoints[i][j]&&insidePoints[i][j+dist]
-          &&insidePoints[i+dist][j]&&insidePoints[i + dist][j +dist]) {
-          fill(#f20000);
-          strokeWeight(1);
-          stroke(200);
-          rect(i, j, dist, dist);
+        if (insideInnerShell[i][j]&&insideInnerShell[i][j+dist]
+          &&insideInnerShell[i+dist][j]&&insideInnerShell[i + dist][j +dist]) {
+            objectEdges.add(new Edge(new Point(i, j), new Point(i, j + dist)));
+            objectEdges.add(new Edge(new Point(i, j + dist), new Point(i + dist, j + dist)));
+            objectEdges.add(new Edge(new Point(i + dist, j + dist), new Point(i + dist, j)));
+            objectEdges.add(new Edge(new Point(i, j), new Point(i + dist, j)));
         }
       }
     }
   }
 
   void objectSubdivision() {
+    objectEdges = new ArrayList();   
     drawObjectLine();
     getInsidePoints();
+    getInteriorVer();
+    getInsideInnerShell();
     drawGrid();
     drawInsideGrid();
+    for (int i = 0; i < boundVer.size() - 2; i ++) {
+      objectEdges.add(new Edge(boundVer.get(i), boundVer.get(boundVer.get(i).position + 1)));
+      objectEdges.add(new Edge(interiorVer.get(i), interiorVer.get(boundVer.get(i).position + 1)));
+      objectEdges.add(new Edge(interiorVer.get(i), boundVer.get(i)));
+    }
+    objectEdges.add(new Edge(boundVer.get(boundVer.size() - 2), boundVer.get(boundVer.size() - 1)));
+    objectEdges.add(new Edge(interiorVer.get(boundVer.size() - 2), interiorVer.get(boundVer.size() - 1)));
+    objectEdges.add(new Edge(interiorVer.get(boundVer.size() - 2), boundVer.get(boundVer.size() - 2)));
+    
+    objectEdges.add(new Edge(boundVer.get(0), boundVer.get(boundVer.size() - 1)));
+    objectEdges.add(new Edge(interiorVer.get(0), interiorVer.get(boundVer.size() - 1)));
+    objectEdges.add(new Edge(interiorVer.get(boundVer.size() - 1), boundVer.get(boundVer.size() - 1)));
+    for (Edge e:objectEdges) {
+      e.drawEdge();
+    }
   }
 
   void getMost() {
@@ -175,10 +199,9 @@ class Object {
 
   void getInsidePoints() {
     color c = color(250, 250, 250);
-    getMost();
     insidePoints = new Boolean[width + 1][height + 1];
-    for (int i = 1; i <= width; i ++) {
-      for (int j = 1; j <= height; j ++) {
+    for (int i = 0; i <= width; i ++) {
+      for (int j = 0; j <= height; j ++) {
         //println(get(i, j));
         if (get(i, j) == c) {
           insidePoints[i][j] = true;
@@ -188,8 +211,34 @@ class Object {
       }
     }
   }
+  
+  void getInsideInnerShell() {
+    background(255);
+    fill(250);
+    stroke(0);
+    strokeWeight(1);
+    smooth();
+    beginShape();
+    for (int i = 0; i < interiorVer.size (); i ++) {
+      vertex(interiorVer.get(i).x, interiorVer.get(i).y);
+    }
+    endShape(CLOSE);
+    color c = color(250, 250, 250);
+    insideInnerShell = new Boolean[width + 1][height + 1];
+    for (int i = 0; i <= width; i ++) {
+      for (int j = 0; j <= height; j ++) {
+        //println(get(i, j));
+        if (get(i, j) == c) {
+          insideInnerShell[i][j] = true;
+        } else {
+          insideInnerShell[i][j] = false;
+        }
+      }
+    }
+    background(255);
+  }
 
-  void reduceBoundaryVertices() {
+  void optimizeBoundaryVertices() {
     tempVer = new ArrayList();
     println("Original size: " + boundVer.size());
     int start = 0;
@@ -200,11 +249,26 @@ class Object {
       int comparePoint = start + 1;
       while (true) {
         if (comparePoint >= boundVer.size() - 1) break;
-        if (dist(boundVer.get(start).x, boundVer.get(start).y, boundVer.get(comparePoint).x, boundVer.get(comparePoint).y) < dist) {
+        float tempDist = dist(boundVer.get(start).x, boundVer.get(start).y, boundVer.get(comparePoint).x, boundVer.get(comparePoint).y);
+        if (tempDist < dist) {
+          //distance too small, skip the point
           comparePoint +=1;
         } else {
+          if (tempDist >= dist*1.5) {
+            //distance too large, create additional points
+            int numberOfAddPoints = floor(tempDist/dist);
+            for (int i = 1; i < numberOfAddPoints; i ++) {
+              Point extraPoint = new Point (round((-boundVer.get(start).x + boundVer.get(comparePoint).x)*dist*i/tempDist + boundVer.get(start).x), round((-boundVer.get(start).y + boundVer.get(comparePoint).y) * dist*i/tempDist + boundVer.get(start).y));
+              tempVer.get(tempVer.size() - 1).adjacents.add(extraPoint);
+              tempVer.add(extraPoint);
+              tempVer.get(tempVer.size() - 1).adjacents.add(tempVer.get(tempVer.size() - 2));
+              tempVer.get(tempVer.size() - 1).position = tempVer.size() - 1;
+            }
+          }
+          //add the point
           tempVer.get(tempVer.size() - 1).adjacents.add(boundVer.get(comparePoint));
           tempVer.add(boundVer.get(comparePoint));
+          
           tempVer.get(tempVer.size() - 1).adjacents.clear();
           tempVer.get(tempVer.size() - 1).adjacents.add(tempVer.get(tempVer.size() - 2));
           tempVer.get(tempVer.size() - 1).position = tempVer.size() - 1;
@@ -214,14 +278,29 @@ class Object {
       }
       if (comparePoint >= boundVer.size() - 1) break;
     }
+    if (dist(tempVer.get(0).x, tempVer.get(0).y, tempVer.get(tempVer.size()-1).x, tempVer.get(tempVer.size()-1).y) > dist*1.5) {
+      Point lastPoint = new Point(tempVer.get(tempVer.size()-1).x, tempVer.get(tempVer.size()-1).y);
+      float tempDist = dist(tempVer.get(0).x, tempVer.get(0).y, tempVer.get(tempVer.size()-1).x, tempVer.get(tempVer.size()-1).y);
+      int numberOfAddPoints = floor(tempDist/dist);
+      for (int i = 1; i < numberOfAddPoints; i ++) {
+        Point extraPoint = new Point (round((-lastPoint.x + tempVer.get(0).x)*dist*i/tempDist + lastPoint.x), round((-lastPoint.y + tempVer.get(0).y) * dist*i/tempDist + lastPoint.y));
+        tempVer.get(tempVer.size() - 1).adjacents.add(extraPoint);
+        tempVer.add(extraPoint);
+        tempVer.get(tempVer.size() - 1).adjacents.add(tempVer.get(tempVer.size() - 2));
+        tempVer.get(tempVer.size() - 1).position = tempVer.size() - 1;
+      }
+    }
     tempVer.get(0).adjacents.add(tempVer.get(tempVer.size() - 1));
     tempVer.get(tempVer.size() - 1).adjacents.add(tempVer.get(0));
     boundVer = tempVer;
   }
-  
+
   void getInteriorVer() {
     interiorVer = new ArrayList();
-    for (int i = 0; i < boundVer.size(); i ++) {
+    ArrayList<Point> intersects = new ArrayList();
+
+    //get intersects 
+    for (int i = 0; i < boundVer.size (); i ++) {
       Point p0 = boundVer.get(i);
       Point p1 = p0.adjacents.get(0);
       Point p2 = p0.adjacents.get(1);
@@ -231,24 +310,107 @@ class Object {
       PVector v02 = new PVector(p2.x - p0.x, p2.y - p0.y);
       int c1 = round(-v01.x*mp01.x - v01.y*mp01.y);
       int c2 = round(-v02.x*mp02.x - v02.y*mp02.y);
-      int sectY = round(-(c1 - v01.x/v02.x*c2)/(v01.y - v01.x*v02.y/v02.x)); 
-      int sectX = round((-c1 - v01.y*sectY)/v01.x);
-      if (sectX < 0 || sectX > width || sectY < 0 || sectY > height) {
-        int c = round(-v01.x*p0.x - v01.y*p0.y);
-        sectY = p0.y - dist*2;
-        sectX = round((-c - v01.y*sectY)/v01.x);
+      int sectX, sectY;
+      int c = round(-v01.x*p0.x - v01.y*p0.y);
+      // //case
+      if (v01.x == v02.x && v01.y == v02.y) {
+        println("Get // case");
+
+        if (v01.x != 0) {
+          sectY = p0.y - dist*2;
+          sectX = round((-c - v01.y*sectY)/v01.x);
+        } else {
+          sectY = p0.y;
+          sectX =p0.x - dist*2;
+        }
+      } else {
+        sectY = round(-(c1 - v01.x/v02.x*c2)/(v01.y - v01.x*v02.y/v02.x)); 
+        sectX = round((-c1 - v01.y*sectY)/v01.x);
       }
-      //println(sectX + " " + round((-c2 - v02.y*sectY)/v02.x) + " " + p0.position);
-      strokeWeight(1);
-      line(p0.x, p0.y, sectX, sectY);
-      float tempDist = dist(p0.x, p0.y, sectX, sectY);
-      Point tempInterior = new Point(round((-p0.x + sectX) * (dist)/tempDist) + p0.x, round((-p0.y + sectY) * (dist)/tempDist) + p0.y);
-      if (insidePoints[tempInterior.x][tempInterior.y] == null || !insidePoints[tempInterior.x][tempInterior.y]) {
-        tempInterior = new Point(p0.x*2 - tempInterior.x, p0.y*2 - tempInterior.y);
+
+      //if intersect jumps out of the screen
+      if (sectX <= 0 || sectX >= width || sectY <= 0 || sectY >= height) {
+        if (v01.x != 0) {
+          sectY = p0.y - dist*2;
+          sectX = round((-c - v01.y*sectY)/v01.x);
+        } else {
+          sectY = p0.y;
+          sectX =p0.x - dist*2;
+        }
       }
-      interiorVer.add(tempInterior);
+      Point tempIntersect = new Point(sectX, sectY);
+      tempIntersect.position = i;
+      intersects.add(tempIntersect);
     }
-    for (Point p:interiorVer) {
+
+    Boolean[] moved = new Boolean[boundVer.size()];
+    for (int i = 0; i < boundVer.size (); i ++) {
+      moved[i] = false;
+    }
+
+    ArrayList<Point> tempInteriors;
+    //initialize interior
+    for (Point p : boundVer) {
+      Point newPoint = new Point(p.x, p.y);
+      newPoint.position = p.position;
+      interiorVer.add(newPoint);
+    } 
+
+    tempInteriors = new ArrayList();
+    for (int fraction = 1; fraction <= dist; fraction ++) {
+
+      //move all interior points by one unit of distance
+      for (Point movingPoint : boundVer) {
+        if (!moved[movingPoint.position]) {
+          //get intersect point
+          Point movingPointInt = intersects.get(movingPoint.position);
+          float tempDist = dist(movingPoint.x, movingPoint.y, movingPointInt.x, movingPointInt.y);
+
+          //get temp interior point by fraction
+          Point tempInterior = new Point(round((-movingPoint.x + movingPointInt.x) * (fraction)/tempDist) + movingPoint.x, round((-movingPoint.y + movingPointInt.y) * (fraction)/tempDist) + movingPoint.y);
+          if (insidePoints[tempInterior.x][tempInterior.y] == null || !insidePoints[tempInterior.x][tempInterior.y]) {
+            tempInterior = new Point(movingPoint.x*2 - tempInterior.x, movingPoint.y*2 - tempInterior.y);
+          }    
+          tempInterior.position = movingPoint.position;
+
+          if (fraction == 1) {
+            tempInteriors.add(tempInterior);
+          } else {
+            tempInteriors.get(tempInterior.position).x = tempInterior.x;
+            tempInteriors.get(tempInterior.position).y = tempInterior.y;
+          }
+        }
+      }
+
+      //testing new points
+      for (Point tInterior : tempInteriors) {
+        if (!moved[tInterior.position]) {
+          boolean check = true;
+          Point originalPoint = boundVer.get(tInterior.position);
+          Point ad1 = originalPoint.adjacents.get(0);
+          Point ad2 = originalPoint.adjacents.get(1);
+          Triangle movingPointTri = new Triangle(tInterior, ad1, ad2);
+          Triangle testTri1 = new Triangle(ad1, tInterior, tempInteriors.get(ad1.position));
+          Triangle testTri2 = new Triangle(ad2, tInterior, tempInteriors.get(ad2.position));
+          //check all testing moved points
+          for (Point checkInteriorPoint : tempInteriors) {
+            if (movingPointTri.checkInside(checkInteriorPoint) || testTri1.checkInside(checkInteriorPoint) ||  testTri2.checkInside(checkInteriorPoint)) {
+              check = false;
+              moved[originalPoint.position] = true;
+              moved[checkInteriorPoint.position] = true;
+              break;
+            }
+          }
+
+          if (check) {
+            //add a new accepted point
+            interiorVer.get(tInterior.position).x = tInterior.x;
+            interiorVer.get(tInterior.position).y = tInterior.y;
+          }
+        }
+      }
+    }
+    for (Point p : interiorVer) {
       p.drawPoint();
     }
   }
